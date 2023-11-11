@@ -1,0 +1,952 @@
+---
+title: "01-exposure"
+format: pdf
+editor: visual
+---
+
+```{r setup}
+knitr::opts_chunk$set(
+	echo = T,
+	message = FALSE,
+	warning = FALSE
+)
+options(scipen = 99999)
+library(tidyverse)
+library(zipcodeR)
+```
+
+# Pink Slime Calculations
+
+## Read in data
+
+```{r}
+pink_slime_by_person <- read_csv("../data/pink_slime_by_person.csv")
+```
+
+## Exposure
+
+### Percent Exposed
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% pull(pink_slime_flag),
+     w = pink_slime_by_person %>% pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% pull(pink_slime_flag), 
+     w = pink_slime_by_person %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+pink_slime_by_person %>% 
+  summarize(x = sum(pink_slime_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% pull(untrustworthy_flag),
+     w = pink_slime_by_person %>% pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% pull(untrustworthy_flag), 
+     w = pink_slime_by_person %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% pull(pink_slime_flag),
+                    weight = pink_slime_by_person %>% pull(weight),
+                    y = pink_slime_by_person %>% pull(untrustworthy_flag),
+                    weighty = pink_slime_by_person %>% pull(weight))
+```
+
+```{r}
+pink_slime_by_person %>% 
+  summarize(x = sum(untrustworthy_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% pull(local_only_flag),
+     w = pink_slime_by_person %>% pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% pull(local_only_flag), 
+     w = pink_slime_by_person %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+pink_slime_by_person %>% 
+  summarize(x = sum(local_only_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+prop.test(x = c(47.35446, 461.2782),
+          n = c(1266.755, 1266.755)) %>% 
+  broom::tidy()
+```
+
+```{r}
+prop.test(x = c(47.35446, 494.9629),
+          n = c(1266.755, 1266.755)) %>% 
+  broom::tidy()
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% pull(pink_slime_flag),
+                    weight = pink_slime_by_person %>% pull(weight),
+                    y = pink_slime_by_person %>% pull(local_only_flag),
+                    weighty = pink_slime_by_person %>% pull(weight))
+```
+
+### Presidential Support
+
+```{r}
+pres_support <- pink_slime_by_person %>% 
+  group_by(presvote20combined) %>% 
+  summarize(x = sum(pink_slime_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+
+prop.test(x = c(pres_support %>% filter(presvote20combined == "Donald Trump") %>% pull(x),
+                pres_support %>% filter(presvote20combined == "Joe Biden") %>% pull(x)),
+          n = c(pres_support %>% filter(presvote20combined == "Donald Trump") %>% pull(n),
+                pres_support %>% filter(presvote20combined == "Joe Biden") %>% pull(n))) %>% 
+  broom::tidy()
+```
+
+```{r}
+pres_support_lib <- pink_slime_by_person %>% 
+  group_by(presvote20combined) %>% 
+  summarize(x = sum(pink_slime_lib_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+
+prop.test(x = c(pres_support_lib %>% filter(presvote20combined == "Donald Trump") %>% pull(x),
+                pres_support_lib %>% filter(presvote20combined == "Joe Biden") %>% pull(x)),
+          n = c(pres_support_lib %>% filter(presvote20combined == "Donald Trump") %>% pull(n),
+                pres_support_lib %>% filter(presvote20combined == "Joe Biden") %>% pull(n))) %>% 
+  broom::tidy()
+```
+
+```{r}
+pres_support_con <- pink_slime_by_person %>% 
+  group_by(presvote20combined) %>% 
+  summarize(x = sum(pink_slime_con_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+
+prop.test(x = c(pres_support_con %>% filter(presvote20combined == "Donald Trump") %>% pull(x),
+                pres_support_con %>% filter(presvote20combined == "Joe Biden") %>% pull(x)),
+          n = c(pres_support_con %>% filter(presvote20combined == "Donald Trump") %>% pull(n),
+                pres_support_con %>% filter(presvote20combined == "Joe Biden") %>% pull(n))) %>% 
+  broom::tidy()
+```
+
+```{r}
+pres_misinfo <- pink_slime_by_person %>% 
+  group_by(trump_support) %>% 
+  summarize(x = sum(untrustworthy_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+
+prop.test(x = c(pres_misinfo %>% filter(trump_support == 1) %>% pull(x),
+                pres_misinfo %>% filter(trump_support == 0) %>% pull(x)),
+          n = c(pres_misinfo %>% filter(trump_support == 1) %>% pull(n),
+                pres_misinfo %>% filter(trump_support == 0) %>% pull(n))) %>% 
+  broom::tidy()
+```
+
+```{r}
+pres_local <- pink_slime_by_person %>% 
+  group_by(trump_support) %>% 
+  summarize(x = sum(local_only_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+
+prop.test(x = c(pres_local %>% filter(trump_support == 1) %>% pull(x),
+                pres_local %>% filter(trump_support == 0) %>% pull(x)),
+          n = c(pres_local %>% filter(trump_support == 1) %>% pull(n),
+                pres_local %>% filter(trump_support == 0) %>% pull(n))) %>% 
+  broom::tidy()
+```
+
+### Age
+
+```{r}
+ages_pink <- pink_slime_by_person %>% 
+  group_by(age4) %>% 
+  summarize(x = sum(pink_slime_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+age_plot_pink <- ages_pink %>% 
+  mutate(age4 = factor(age4, levels = c("Under 30", "30-44", "45-64", "65+"))) %>% 
+  ggplot(aes(x = age4, ymin = conf.low, y = estimate, ymax = conf.high, color = age4))+
+  geom_pointrange()+
+  scale_color_grey()+
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0, .6))+
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(title = "Pink Slime - Age", 
+       x = "",
+       y = "") +
+  theme_bw()+
+  theme(legend.position = "none", panel.grid.major.x = element_blank())
+```
+
+```{r}
+media_deciles_pink <- pink_slime_by_person %>% 
+  group_by(ideology_bin) %>% 
+  summarize(x = sum(pink_slime_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+media_plot_pink <- media_deciles_pink %>% 
+  ggplot(aes(x = ideology_bin, ymin = conf.low, y = estimate, ymax = conf.high))+
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0, .6)) +
+  scale_x_continuous(breaks = seq(0, 10, 1)) +
+ labs(x = "", 
+       y = "",
+       title = "Pink Slime - Media Diet Slant") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+race_pink <- pink_slime_by_person %>% 
+  group_by(race4) %>% 
+  summarize(x = sum(pink_slime_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+race_plot_pink <- race_pink %>% 
+  ggplot(aes(x = reorder(race4, desc(estimate)), ymin = conf.low, y = estimate, ymax = conf.high, color = reorder(race4, desc(estimate)))) +
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6)) +
+  scale_color_grey() +
+ labs(x = "", 
+       y = "",
+       title = "Pink Slime - Race") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+ages_misinfo <- pink_slime_by_person %>% 
+  group_by(age4) %>% 
+  summarize(x = sum(untrustworthy_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+age_plot_misinfo <- ages_misinfo %>% 
+  mutate(age4 = factor(age4, levels = c("Under 30", "30-44", "45-64", "65+"))) %>% 
+  ggplot(aes(x = age4, ymin = conf.low, y = estimate, ymax = conf.high, color = age4))+
+  geom_pointrange()+
+  scale_color_grey()+
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6))+
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(title = "Misinformation - Age", 
+       x = "",
+       y = "") +
+  theme_bw()+
+  theme(legend.position = "none", panel.grid.major.x = element_blank())
+```
+
+```{r}
+media_deciles_misinfo <- pink_slime_by_person %>% 
+  group_by(ideology_bin) %>% 
+  summarize(x = sum(untrustworthy_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+media_plot_misinfo <- media_deciles_misinfo %>% 
+  ggplot(aes(x = ideology_bin, ymin = conf.low, y = estimate, ymax = conf.high))+
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6)) +
+  scale_x_continuous(breaks = seq(0, 10, 1)) +
+ labs(x = "most liberal to most conservative media diet", 
+       y = "",
+       title = "Misinformation - Media Diet Slant") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+race_misinfo <- pink_slime_by_person%>% 
+  group_by(race4) %>% 
+  summarize(x = sum(untrustworthy_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+race_plot_misinfo <- race_misinfo %>% 
+  ggplot(aes(x = reorder(race4, desc(estimate)), ymin = conf.low, y = estimate, ymax = conf.high, color = reorder(race4, desc(estimate)))) +
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6)) +
+  scale_color_grey() +
+ labs(x = "", 
+       y = "",
+       title = "Misinformation - Race") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+ages_local <- pink_slime_by_person %>% 
+  group_by(age4) %>% 
+  summarize(x = sum(local_only_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+age_plot_local <- ages_local %>% 
+  mutate(age4 = factor(age4, levels = c("Under 30", "30-44", "45-64", "65+"))) %>% 
+  ggplot(aes(x = age4, ymin = conf.low, y = estimate, ymax = conf.high, color = age4))+
+  geom_pointrange()+
+  scale_color_grey()+
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6))+
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(title = "Local News - Age", 
+       x = "",
+       y = "") +
+  theme_bw()+
+  theme(legend.position = "none", panel.grid.major.x = element_blank())
+```
+
+```{r}
+media_deciles_local <- pink_slime_by_person %>% 
+  group_by(ideology_bin) %>% 
+  summarize(x = sum(local_only_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+media_plot_local <- media_deciles_local %>% 
+  ggplot(aes(x = ideology_bin, ymin = conf.low, y = estimate, ymax = conf.high))+
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6)) +
+  scale_x_continuous(breaks = seq(0, 10, 1)) +
+ labs(x = "", 
+       y = "",
+       title = "Local News - Media Diet Slant") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r}
+race_local <- pink_slime_by_person %>% 
+  group_by(race4) %>% 
+  summarize(x = sum(local_only_flag * weight),
+            n = sum(weight)) %>% 
+  rowwise %>%
+  mutate(tst = list(broom::tidy(prop.test(x, n, conf.level=0.95)))) %>%
+  tidyr::unnest(tst)
+```
+
+```{r}
+race_plot_local <- race_local %>% 
+  ggplot(aes(x = reorder(race4, desc(estimate)), ymin = conf.low, y = estimate, ymax = conf.high, color = reorder(race4, desc(estimate)))) +
+  geom_pointrange() +
+  #scale_color_grey() +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, 1, .05), limits = c(0,.6)) +
+  scale_color_grey() +
+ labs(x = "", 
+       y = "",
+       title = "Local News - Race") + 
+  theme_bw()+
+  theme(legend.position = "none", 
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+```{r fig.height=10, fig.width=12}
+ggpubr::ggarrange(age_plot_pink, age_plot_misinfo, age_plot_local, media_plot_pink, media_plot_misinfo, media_plot_local, race_plot_pink, race_plot_misinfo, race_plot_local, labels = c("A1", "B1", "C1", "A2", "B2", "C2", "A3", "B3", "C3")) %>% 
+   ggpubr::annotate_figure(top = ggpubr::text_grob("Proportion Exposed to Website Type By:"))
+```
+
+## Exposure Among the Exposed
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_n),
+     w = pink_slime_by_person %>% filter(pink_slime_n > 0) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_n), 
+     w = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(untrustworthy_n),
+     w = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(untrustworthy_n), 
+     w = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_n),
+                    weight = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(weight),
+                    y = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(untrustworthy_n),
+                    weighty = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(weight))
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_per),
+                    weight = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(weight),
+                    y = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(untrustworthy_per),
+                    weighty = pink_slime_by_person %>% filter(untrustworthy_n > 0) %>% pull(weight))
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_n),
+                    weight = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(weight),
+                    y = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(local_only_n),
+                    weighty = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(weight))
+```
+
+```{r}
+ weights::wtd.t.test(x = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(pink_slime_per),
+                    weight = pink_slime_by_person %>% filter(pink_slime_n > 0) %>% pull(weight),
+                    y = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(local_only_per),
+                    weighty = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(weight))
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(local_only_n),
+     w = pink_slime_by_person %>% filter(local_only_n > 0) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(local_only_n), 
+     w = pink_slime_by_person %>% filter(local_only_n > 0) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+plot_n_pink <- pink_slime_by_person %>% 
+  filter(pink_slime_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(pink_slime_n)) +
+  geom_density(alpha = 1, fill = "grey") +
+  scale_fill_grey() +
+  scale_x_log10() +
+  labs(title = "Distribution of Total Pink Slime Website Visits",
+       x = "log scale of # of pink slime website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plot_per_pink <- pink_slime_by_person %>% 
+  filter(pink_slime_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(pink_slime_per)) +
+  geom_density(alpha = 1, fill = "black") +
+  scale_fill_grey() +
+  scale_x_log10(labels = scales::percent_format()) +
+  labs(title = "Distribution of Total Pink Slime Website Visits",
+       x = "log scale of # of pink slime website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plot_n_misinfo <- pink_slime_by_person %>% 
+  filter(untrustworthy_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(untrustworthy_n)) +
+  geom_density(alpha = 1, fill = "grey") +
+  scale_fill_grey() +
+  scale_x_log10() +
+  labs(title = "Distribution of Total Misinformation Website Visits",
+       x = "log scale of # of misinformation website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plot_per_misinfo <- pink_slime_by_person %>% 
+  filter(untrustworthy_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(untrustworthy_per)) +
+  geom_density(alpha = 1, fill = "black") +
+  scale_fill_grey() +
+  scale_x_log10(labels = scales::percent_format()) +
+  labs(title = "Distribution of Total Misinformation Website Visits",
+       x = "log scale of # of misinformation website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+```{r}
+plot_n_local <- pink_slime_by_person %>% 
+  filter(local_only_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(local_only_n)) +
+  geom_density(alpha = 1, fill = "grey") +
+  scale_fill_grey() +
+  scale_x_log10() +
+  labs(title = "Distribution of Total Local News Website Visits",
+       x = "log scale of # of local news website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+plot_per_local <- pink_slime_by_person %>% 
+  filter(local_only_flag == 1) %>% 
+  left_join(pres_support) %>% 
+  ggplot(aes(local_only_per)) +
+  geom_density(alpha = 1, fill = "black") +
+  scale_fill_grey() +
+  scale_x_log10(labels = scales::percent_format()) +
+  labs(title = "Distribution of Total Local News Website Visits",
+       x = "log scale of # of local news website visits") +
+  theme_classic() +
+  theme(legend.position = "none")
+```
+
+```{r}
+ggpubr::ggarrange(plot_n_pink, plot_n_misinfo, plot_n_local, plot_per_pink, plot_per_misinfo, plot_per_local, ncol = 3, labels = c("A1", "A2", "A3", "B1", "B2", "B3"))
+```
+
+```{r}
+exposed_calcs <- pink_slime_by_person %>% 
+  filter(local_only_flag == 1) %>% 
+  select(`# of Exposures` = local_only_n, `% of Web Visits` = local_only_per) %>% 
+  mutate(type = "3. Local News") %>% 
+  bind_rows(pink_slime_by_person %>% 
+  filter(pink_slime_flag == 1) %>% 
+  select(`# of Exposures` = pink_slime_n, `% of Web Visits` = pink_slime_per) %>% 
+  mutate(type = "1. Pink Slime")) %>% 
+  bind_rows(pink_slime_by_person %>% 
+  filter(untrustworthy_flag == 1) %>% 
+  select(`# of Exposures` = untrustworthy_n, `% of Web Visits` = untrustworthy_per) %>% 
+  mutate(type = "2. Misinformation")) %>% 
+  pivot_longer(cols = c(`# of Exposures`, `% of Web Visits`)) 
+```
+
+```{r}
+exposed_plot <- exposed_calcs %>% 
+  filter(name == "# of Exposures") %>% 
+  ggplot(aes(value, fill = type)) +
+  geom_histogram() +
+  scale_x_log10() +
+  scale_fill_grey() +
+  facet_wrap(.~type) +
+  theme_classic() + 
+  labs(title = "Distribution of Number of Exposures",
+       y = "number of people",
+       x = "number of visits") +
+  theme(legend.position = "none")
+
+per_plot <- exposed_calcs %>% 
+  filter(name == "% of Web Visits") %>% 
+  ggplot(aes(value, fill = type)) +
+  geom_histogram() +
+  scale_x_log10(labels = scales::percent_format(.01)) +
+  scale_fill_grey() +
+  facet_wrap(.~type) +
+  theme_classic() + 
+  labs(title = "Distribution of Percentage of Web Visits",
+       y = "number of people",
+       x = "percentage of web visits") +
+  theme(legend.position = "none")
+```
+
+```{r}
+ggpubr::ggarrange(exposed_plot, per_plot, ncol = 1, labels = c("A", "B"))
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_per)) %>% pull(pink_slime_per),
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_per)) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_per)) %>% pull(pink_slime_per), 
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_per)) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per)) %>% pull(pink_slime_local_per),
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per)) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per)) %>% pull(pink_slime_local_per), 
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per)) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_per) & pink_slime_n > 0) %>% pull(pink_slime_per),
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_per) & pink_slime_n > 0) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_per) & pink_slime_n > 0) %>% pull(pink_slime_per), 
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_per) & pink_slime_n > 0) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+```{r}
+tibble(mean = diagis::weighted_mean(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per) & pink_slime_n > 0) %>% pull(pink_slime_local_per),
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per) & pink_slime_n > 0) %>%  pull(weight)), 
+     se = diagis::weighted_se(x = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per) & pink_slime_n > 0) %>% pull(pink_slime_local_per), 
+     w = pink_slime_by_person %>% filter(!is.nan(pink_slime_local_per) & pink_slime_n > 0) %>% pull(weight))) %>% 
+  mutate(low = mean - se * 1.96,
+         high = mean + se * 1.96)
+```
+
+## Avg. time on page
+
+\[The data to run these calculations is unavailable because they require individual-level website visits, of which we cannot share in order to protect participant privacy\]
+
+```{r eval = F}
+t.test(all_pulse_labeled %>% filter(pink_slime == 1) %>% pull(page_duration)) %>% 
+  broom::tidy()
+
+t.test(all_pulse_labeled %>% filter(local == 1) %>% pull(page_duration)) %>% 
+  broom::tidy()
+
+t.test(all_pulse_labeled %>% filter(misinformation_moore == 1) %>% pull(page_duration)) %>% 
+  broom::tidy()
+
+t.test(all_pulse_labeled %>% filter(pink_slime == 1) %>% pull(page_duration),
+       all_pulse_labeled %>% filter(local == 1) %>% pull(page_duration)) %>% 
+  broom::tidy()
+
+t.test(all_pulse_labeled %>% filter(pink_slime == 1) %>% pull(page_duration),
+       all_pulse_labeled %>% filter(misinformation_moore == 1) %>% pull(page_duration)) %>% 
+  broom::tidy()
+```
+
+## Referral Analysis
+
+\[The data to run these calculations is unavailable because they require individual-level website visits, of which we cannot share in order to protect participant privacy\]
+
+```{r eval = F}
+all_pulse_refs <- all_pulse_labeled %>% 
+  mutate(pink_slime = ifelse(is.na(pink_slime), 0, pink_slime)) %>% 
+  group_by(caseid) %>% 
+  mutate(site_lead = dplyr::lead(combined_name, n = 1L, order_by = date_time_local)) %>% 
+  mutate(ref_category = case_when(
+    str_detect(site_lead, "google.com") ~ "Google",
+    str_detect(site_lead, "bing.com") ~ "Bing",
+    str_detect(site_lead, "search.yahoo.com") ~ "Yahoo",
+    str_detect(site_lead, "duckduckgo.com") ~ "DuckDuckGo",
+    str_detect(site_lead, "facebook.com") ~ "Facebook",
+    str_detect(site_lead, "twitter.com") ~ "Twitter",
+    str_detect(site_lead, "youtube.com") ~ "YouTube",
+    str_detect(site_lead, "reddit.com") ~ "Reddit",
+    str_detect(site_lead, "instagram.com") ~ "Instagram",
+    site_lead %in% c("mail.yahoo.com", "outlook.live.com", "mail.google.com", "mail.aol.com") ~ "Webmail",
+  T ~ "other")) %>% 
+  ungroup() 
+
+all_pulse_refs %>% 
+  filter(pink_slime == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Pink Slime") %>% 
+  bind_rows(all_pulse_refs %>% 
+  filter(misinformation_moore == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Misinformation")) %>% 
+  bind_rows(all_pulse_refs %>% 
+  filter(local_only == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Local News")) %>% 
+  filter(ref_category != "other") %>% 
+  mutate(type = factor(type, levels = c("Pink Slime", "Misinformation", "Local News"))) %>% 
+  ggplot(aes(x = reorder(ref_category, desc(per)), y = per, fill = type)) +
+  geom_col(position = position_dodge(), color = "black") +
+  scale_y_continuous(labels = scales::percent_format(), breaks = seq(0, .3, .05)) +
+  scale_fill_grey() +
+  labs(title = "Website Referrers",
+      x = "",
+       y = "Estimated percentage of visits
+originating from referrer", 
+fill = "Website Type") + 
+  theme_bw() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) 
+
+all_pulse_refs %>% 
+  filter(pink_slime == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Pink Slime")
+
+all_pulse_refs %>% 
+  filter(misinformation_moore == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Misinfo")
+
+all_pulse_refs %>% 
+  filter(local_only == 1) %>% 
+  count(ref_category, sort = T) %>% 
+  mutate(per = n / sum(n),
+         type = "Local News")
+```
+
+## Geo Engineering
+
+```{r}
+participant_zips <- pink_slime_by_person %>% 
+  select(caseid, zipcode) %>% 
+  filter(!is.na(zipcode)) %>% 
+  left_join(reverse_zipcode(pink_slime_by_person %>% filter(!is.na(zipcode)) %>% pull(zipcode))) %>% 
+  mutate(county = tolower(county))
+```
+
+```{r}
+news_per_county <- list.files("../data/US News Deserts Database/", full.names = T) %>% 
+  lapply(readxl::read_xlsx) %>% 
+  lapply(janitor::clean_names) %>% 
+  bind_rows() %>%
+  mutate(county = if_else(is.na(county), ethnic_media_county, county),
+         state = if_else(is.na(state), ethnic_media_state, state)) %>% 
+  mutate(county = str_replace(county, " county", ""),
+         county = tolower(county)) %>% 
+  count(county, state, sort = T) 
+```
+
+```{r}
+news_desert_info <- participant_zips %>% 
+  mutate(county = str_replace(county, " county", "")) %>% 
+  left_join(news_per_county) %>% 
+  mutate(n_news = replace_na(n, 0)) %>% 
+  mutate(news_desert_binary = if_else(n_news == 0, 1, 0),
+         news_desert_binary_2 = if_else(n_news <= 1, 1, 0),
+         news_desert_category = case_when(
+           n_news == 0 ~ "2.no_papers",
+           n_news == 1 ~ "1.one_paper",
+           n_news > 1 ~ "0.multiple_papers"
+         ),
+         n_news_log = log(n_news + .0001),
+         n_news_per_capita = n_news / population,
+         n_news_per_capita_log = log(n_news_per_capita + .0001))
+```
+
+```{r}
+news_desert_md <- pink_slime_by_person %>% 
+  left_join(news_desert_info, by = c("caseid", "zipcode")) %>% 
+  filter(!is.na(zipcode)) %>% 
+  mutate(race4 = case_when(
+    race4 == "Other" ~ "0. Other",
+    T ~ race4
+  ))
+```
+
+```{r}
+pink_slime_nd_model <- lm(pink_slime_flag ~ n_news, data = news_desert_md, weights = weight) 
+```
+
+```{r}
+misinfo_nd_model <- lm(untrustworthy_flag ~ n_news, data = news_desert_md, weights = weight) 
+```
+
+```{r}
+local_nd_model <- lm(local_only_flag ~ n_news, data = news_desert_md, weights = weight) 
+```
+
+```{r}
+pink_slime_nd_model_full <- lm(pink_slime_flag ~ n_news + trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65, data = news_desert_md, weights = weight) 
+```
+
+```{r}
+misinfo_nd_model_full <- lm(untrustworthy_flag ~ n_news + trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65, data = news_desert_md, weights = weight) 
+```
+
+```{r}
+local_nd_model_full <- lm(local_only_flag ~ n_news + trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65, data = news_desert_md, weights = weight) 
+```
+
+```{r, results='asis'}
+stargazer::stargazer(pink_slime_nd_model, local_nd_model, pink_slime_nd_model_full, local_nd_model_full, header = FALSE, type = "latex", dep.var.labels.include = F, dep.var.caption = "Exposure to at least one website", model.numbers = F, covariate.labels = c("News Outlets in County", "Trump supporter", "Political knowledge", "Political interest", "College", "Female", "Non-white", "Age 30-44 years", "Age 45-64 years", "Age 65+"), star.char = c("*", "**", "***"), star.cutoffs = c(0.05, 0.01, 0.001), column.labels=c('Pink Slime', 'Local News', "Pink Slime", "Local News"),
+#omit.stat = c("f","adj.rsq"), 
+font.size = "footnotesize", 
+column.sep.width = "1pt", 
+digits=2,
+no.space = TRUE)
+```
+
+```{r}
+pink_slime_nd_model_log <- glm(pink_slime_flag ~ n_news, data = news_desert_md, weights = weight, family = binomial(link = "logit")) 
+```
+
+```{r}
+local_nd_model_log <- glm(local_only_flag ~ n_news, data = news_desert_md, weights = weight, family = binomial(link = "logit")) 
+```
+
+```{r}
+pink_slime_nd_model_full_log <- glm(pink_slime_flag ~ n_news + trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65, data = news_desert_md, weights = weight, family = binomial(link = "logit"))
+```
+
+```{r}
+local_nd_model_full_log <- glm(local_only_flag ~ n_news + trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65, data = news_desert_md, weights = weight, family = binomial(link = "logit"))
+```
+
+```{r, results='asis'}
+stargazer::stargazer(pink_slime_nd_model_log, local_nd_model_log, pink_slime_nd_model_full_log, local_nd_model_full_log, header = FALSE, type = "latex", dep.var.labels.include = F, dep.var.caption = "Exposure to at least one website", model.numbers = F, covariate.labels = c("News Outlets in County", "Trump supporter", "Political knowledge", "Political interest", "College", "Female", "Non-white", "Age 30-44 years", "Age 45-64 years", "Age 65+"), star.char = c("*", "**", "***"), star.cutoffs = c(0.05, 0.01, 0.001), column.labels=c('Pink Slime', 'Local News', "Pink Slime", "Local News"),
+#omit.stat = c("f","adj.rsq"), 
+font.size = "footnotesize", 
+column.sep.width = "1pt", 
+digits=2,
+no.space = TRUE)
+```
+
+## Pink Slime Hits
+
+\[The data to run these calculations is unavailable because they require individual-level website visits, of which we cannot share in order to protect participant privacy\]
+
+```{r eval = F}
+pink_slime_dist_calcs <- all_pulse_labeled %>% 
+  filter(pink_slime == 1) %>% 
+  left_join(read_csv("data/hits_labeled.csv")) %>% 
+  left_join(news_desert_md) %>% 
+  select(caseid, combined_name, news_lat, news_long, lat, lng) %>% 
+  rowwise() %>% 
+  mutate(dist_meters = geodist::geodist_vec(lng, lat, news_long, news_lat),
+         dist_miles = dist_meters / 1609.344) %>% 
+  left_join(news_desert_md) %>% 
+  mutate(trump_support_long = ifelse(trump_support == 1, "Trump supporter", ifelse(trump_support == 0, "non-Trump supporter", NA))) %>% 
+  left_join(weights) %>% 
+  mutate(race4 = case_when(
+    race4 == "Other" ~ "0. Other",
+    T ~ race4
+  ),
+  type = "pink_slime",
+  pink_slime = 1) 
+```
+
+```{r eval = F}
+local_dist_calcs <- all_pulse_labeled %>% 
+  filter(local_only == 1) %>% 
+  left_join(read_csv("data/local_regional_labeled.csv")) %>% 
+  left_join(news_desert_md) %>% 
+  select(caseid, combined_name, news_lat, news_long, lat, lng) %>% 
+  mutate(news_long = -abs(news_long)) %>% 
+  rowwise() %>% 
+  mutate(dist_meters = geodist::geodist_vec(lng, lat, news_long, news_lat),
+         dist_miles = dist_meters / 1609.344) %>% 
+  left_join(news_desert_md) %>% 
+  mutate(trump_support_long = ifelse(trump_support == 1, "Trump supporter", ifelse(trump_support == 0, "non-Trump supporter", NA))) %>% 
+  left_join(weights) %>% 
+  mutate(race4 = case_when(
+    race4 == "Other" ~ "0. Other",
+    T ~ race4
+  ),
+  type = "local_news",
+  pink_slime = 0)
+```
+
+```{r eval = F}
+dist_calcs <- pink_slime_dist_calcs %>% 
+  bind_rows(local_dist_calcs) %>% 
+  mutate(type = case_when(
+    type == "pink_slime" ~ "Pink Slime",
+    type == "local_news" ~ "Local News"
+  ))
+```
+
+```{r eval = F}
+map_data("state") %>% 
+  ggplot() +
+  geom_polygon(aes(long, lat, group = group), fill = "white", color = "grey", alpha = .6) +
+  geom_point(data = dist_calcs %>% filter(!is.na(lat) & !is.na(news_lat)), aes(x = lng, y = lat)) +
+  geom_segment(data = dist_calcs %>% filter(!is.na(lat) & type == "Local News"), aes(x = lng, y = lat, xend = news_long, yend = news_lat, color = as.factor(trump_support_long)), arrow = arrow(length = unit(.1, "cm")), alpha = .2) +
+  geom_segment(data = dist_calcs %>% filter(!is.na(lat) & type == "Pink Slime"), aes(x = lng, y = lat, xend = news_long, yend = news_lat, color = as.factor(trump_support_long)), arrow = arrow(length = unit(.1, "cm")), alpha = .4) +
+  coord_map() +
+  lims(x = c(-125, -67),
+       y = c(25, 50)) +
+  scale_color_manual(values = c("blue", "red")) +
+  labs(title = "Location of individuals and their local news/ pink slime consumption",
+       subtitle = "dot = individual location, arrow tip = pink slime location",
+       color = "",
+       caption = "Alaska and Hawaii not included in map") +
+  theme_void() +
+  theme(legend.position = "none") +
+  facet_wrap(type~trump_support_long)
+```
+
+```{r eval = F}
+dist_model_1 <- lme4::lmer(dist_miles ~ (1|caseid), data = dist_calcs %>% filter(pink_slime == 1), weights = weight)
+```
+
+```{r eval = F}
+dist_model_2 <- lme4::lmer(dist_miles ~ (1|caseid), data = dist_calcs %>% filter(pink_slime == 0), weights = weight)
+```
+
+```{r eval = F}
+dist_model_3 <- lme4::lmer(dist_miles ~ pink_slime + (1|caseid), data = dist_calcs, weights = weight)
+```
+
+```{r eval = F}
+dist_model_4 <- lme4::lmer(dist_miles ~ trump_support + knowledge + interest + college + female + non_white + age4_30_44 + age4_45_64 + age4_65 + n_news_per_capita + (1|caseid), data = dist_calcs %>% filter(pink_slime == 1), weights = weight)
+```
+
+```{r eval = F}
+stargazer::stargazer(dist_model_1, dist_model_2, dist_model_3, header = FALSE, type = "latex", dep.var.labels.include = F, dep.var.caption = "Distance to news consumption", model.numbers = F, covariate.labels = c("Pink Slime", "Constant"), star.char = c("*", "**", "***"), star.cutoffs = c(0.05, 0.01, 0.001), column.labels=c('Pink Slime Distance','Local News Distance', 'Difference'))
+```
+
+## Session Info
+
+```{r}
+sessionInfo()
+```
